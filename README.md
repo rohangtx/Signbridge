@@ -74,10 +74,6 @@ run_translation_v4.bat
 venv\Scripts\python.exe -m pytest -q
 ```
 
-## Antigravity workflow
-
-Open the entire extracted repository folder, then paste `ANTIGRAVITY_MASTER_PROMPT.md` into the Agent Chat. Ask the agent to inspect and run tests before changing the architecture. Review changes before approving shell commands, installs, Git pushes or public deployment.
-
 ## Deployment notes
 
 The Streamlit UI can be deployed after pushing the source and the **required model files** to an appropriate repository/storage location. MediaPipe + TensorFlow dependencies and trained model size may make free cloud hosting impractical. The V2 OpenCV webcam window is intended for a local machine, not a remote Streamlit server. Do not commit raw dataset/video files or SQLite history to a public repository by default. Use `.gitignore` and dataset licenses carefully.
