@@ -1,0 +1,7 @@
+{
+  "valid_pairs": 642,
+  "unique_signers_known": 172,
+  "sequence_length": 32,
+  "features_per_frame": 258,
+  "unique_sentences": 40
+}

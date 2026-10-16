@@ -1,0 +1,10 @@
+{
+  "project": "SignBridge",
+  "versions": {
+    "v1": {"name": "Isolated sign recognition", "sequence_length": 32, "features_per_frame": 258, "output": "one class label"},
+    "v2": {"name": "Continuous rolling-window gloss recognition", "window_frames": 32, "output": "time-ordered gloss buffer; not sentence translation"},
+    "v3": {"name": "LSTM sentence translation", "input": "continuous ISL video features", "output": "English token sequence"},
+    "v4": {"name": "Transformer sentence translation", "input": "continuous ISL video features", "output": "English token sequence"}
+  },
+  "feature_schema": {"pose": 132, "left_hand": 63, "right_hand": 63, "total_per_frame": 258}
+}
