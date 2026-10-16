@@ -11,8 +11,16 @@ import gc
 from pathlib import Path
 
 import cv2
-import mediapipe as mp
 import numpy as np
+
+try:
+    import mediapipe.python.solutions.holistic as mp_holistic
+except Exception:
+    try:
+        import mediapipe.solutions.holistic as mp_holistic
+    except Exception:
+        import mediapipe as mp
+        mp_holistic = getattr(mp, "solutions", None).holistic
 
 cv2.setNumThreads(1)
 
@@ -28,7 +36,7 @@ class LandmarkExtractor:
         self._create_holistic()
 
     def _create_holistic(self) -> None:
-        self.holistic = mp.solutions.holistic.Holistic(
+        self.holistic = mp_holistic.Holistic(
             static_image_mode=False,
             model_complexity=0,  # lower memory use for dataset preprocessing
             enable_segmentation=False,
