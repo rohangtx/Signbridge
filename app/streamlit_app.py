@@ -453,18 +453,18 @@ def uploaded_temp(uploaded, suffix):
 
 def load_metrics_data():
     data = {}
-    bf = ROOT / "models" / "baseline" / "metrics.json"
-    lf = ROOT / "models" / "lstm" / "metrics.json"
-    if bf.is_file():
-        try:
-            data["baseline"] = json.loads(bf.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    if lf.is_file():
-        try:
-            data["lstm"] = json.loads(lf.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+    for key, rel in [
+        ("baseline", "models/baseline/metrics.json"),
+        ("lstm",     "models/lstm/metrics.json"),
+        ("v3",       "models/v3/metrics.json"),
+        ("v4",       "models/v4/metrics.json"),
+    ]:
+        p = ROOT / rel
+        if p.is_file():
+            try:
+                data[key] = json.loads(p.read_text(encoding="utf-8"))
+            except Exception:
+                pass
     return data
 
 
@@ -547,12 +547,17 @@ with st.sidebar:
     rf_text = "Ready (64.5%)" if HAS_RF else "Not trained"
     lstm_badge = "online" if HAS_LSTM else "amber"
     lstm_text = "Ready (42.1%)" if HAS_LSTM else "Not trained"
+    v3_badge = "online" if HAS_V3 else "amber"
+    v3_text = "Ready (BLEU 0.031)" if HAS_V3 else "Not trained"
+    v4_badge = "online" if HAS_V4 else "amber"
+    v4_text = "Ready (BLEU 0.076)" if HAS_V4 else "Not trained"
     st.markdown(
         f"""
         <div style="display:flex;flex-direction:column;gap:0.4rem">
           <div class="sb-pill {rf_badge}"><span class="sb-dot"></span> Random Forest: {rf_text}</div>
           <div class="sb-pill {lstm_badge}"><span class="sb-dot"></span> Bi-LSTM: {lstm_text}</div>
-          <div class="sb-pill {'online' if HAS_SENTENCE else 'amber'}"><span class="sb-dot"></span> Continuous V3/V4: {'Online' if HAS_SENTENCE else 'In Setup'}</div>
+          <div class="sb-pill {v3_badge}"><span class="sb-dot"></span> V3 Sentence LSTM: {v3_text}</div>
+          <div class="sb-pill {v4_badge}"><span class="sb-dot"></span> V4 Transformer: {v4_text}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -847,74 +852,154 @@ elif page == "🌐 Sentence Translation":
         <div style="margin-bottom:1.2rem">
           <h2 style="font-size:1.6rem;font-weight:900;color:#fff;margin:0 0 0.3rem">Continuous Sentence Translation</h2>
           <div style="color:#94a3b8;font-size:0.9rem">
-            Translates continuous, multi-sign video into fluent written English sentences.
+            Translates a continuous ISL signing video into a fluent English sentence using trained V3 (LSTM) or V4 (Transformer) encoder-decoder models.
           </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    s_col1, s_col2 = st.columns([1.2, 0.8], gap="large")
+    if not HAS_SENTENCE:
+        st.warning(
+            "No sentence translation model found. Run `run_translation_v3.bat` or `run_translation_v4.bat` to train V3/V4 first."
+        )
+    else:
+        # Model selector — only show models that are actually available
+        available_models = []
+        if HAS_V4:
+            available_models.append("V4 — Temporal Transformer (BLEU 0.076, Exact-match 24.1%)")
+        if HAS_V3:
+            available_models.append("V3 — Encoder-Decoder LSTM (BLEU 0.031, Exact-match 5.6%)")
 
-    with s_col1:
-        with st.container(border=True):
-            st.markdown("### 📹 Upload Continuous ISL Video")
-            sentence_video = st.file_uploader(
-                "Upload continuous signing sequence (.mp4, .mov)",
-                type=["mp4", "mov", "avi"],
-                key="sentence_video",
-            )
-            if sentence_video:
-                st.video(sentence_video)
+        s_col1, s_col2 = st.columns([1.2, 0.8], gap="large")
 
-            st.markdown("---")
-            st.markdown("### 📷 Or Record via Browser Camera")
-            try:
-                from streamlit_webrtc import WebRtcMode, webrtc_streamer
-                from inference.live_stream import LiveSignProcessor
-                sentence_camera_ctx = webrtc_streamer(
-                    key="sentence-translation-live-camera",
-                    mode=WebRtcMode.SENDRECV,
-                    video_processor_factory=lambda: LiveSignProcessor(enable_recording=True),
-                    media_stream_constraints={"video": True, "audio": False},
-                    async_processing=True,
-                    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+        with s_col1:
+            with st.container(border=True):
+                st.markdown("### 📹 Upload Continuous ISL Video")
+                sentence_video = st.file_uploader(
+                    "Upload a continuous signing video (.mp4, .mov, .avi)",
+                    type=["mp4", "mov", "avi"],
+                    key="sentence_video",
                 )
-            except Exception as e:
-                st.caption(f"WebRTC ready: {e}")
+                if sentence_video:
+                    st.video(sentence_video)
 
-            st.markdown("---")
-            translate_btn = st.button(
-                "Generate English Translation →",
-                type="primary",
-                use_container_width=True,
-                key="translate_live_camera_button",
-            )
+                st.markdown("---")
+                st.markdown("### 📷 Or Record via Browser Camera")
+                try:
+                    from streamlit_webrtc import WebRtcMode, webrtc_streamer
+                    from inference.live_stream import LiveSignProcessor
+                    sentence_camera_ctx = webrtc_streamer(
+                        key="sentence-translation-live-camera",
+                        mode=WebRtcMode.SENDRECV,
+                        video_processor_factory=lambda: LiveSignProcessor(enable_recording=True),
+                        media_stream_constraints={"video": True, "audio": False},
+                        async_processing=True,
+                        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+                    )
+                except Exception as e:
+                    st.caption(f"WebRTC ready: {e}")
 
-    with s_col2:
-        with st.container(border=True):
-            st.markdown("### 💬 Translated Sentence Draft")
-            if translate_btn:
-                if HAS_SENTENCE:
-                    st.success("Draft: 'Hello, please help the student today.'")
-                else:
+                st.markdown("---")
+                selected_model_label = st.selectbox(
+                    "Translation Engine",
+                    available_models,
+                    key="sentence_model_choice",
+                )
+                sentence_version = "v4" if "V4" in selected_model_label else "v3"
+
+                translate_btn = st.button(
+                    "🌐 Generate English Translation",
+                    type="primary",
+                    use_container_width=True,
+                    disabled=(sentence_video is None),
+                    key="translate_live_camera_button",
+                )
+
+        with s_col2:
+            with st.container(border=True):
+                st.markdown("### 💬 Translated Sentence")
+
+                if translate_btn and sentence_video is not None:
+                    temp_sv = uploaded_temp(sentence_video, Path(sentence_video.name).suffix)
+                    with st.spinner(f"Extracting landmarks and running {selected_model_label.split('—')[0].strip()} inference…"):
+                        try:
+                            from inference.sentence_inference import translate_video
+                            translation, conf = translate_video(str(temp_sv), version=sentence_version)
+                            temp_sv.unlink(missing_ok=True)
+                            st.session_state["sentence_result"] = {
+                                "text": translation,
+                                "conf": conf,
+                                "version": sentence_version.upper(),
+                            }
+                        except Exception as err:
+                            temp_sv.unlink(missing_ok=True)
+                            st.error(f"Translation error: {err}")
+                            st.session_state.pop("sentence_result", None)
+
+                result = st.session_state.get("sentence_result")
+                if result:
+                    conf_pct = result["conf"] * 100
+                    badge_col = "#10b981" if conf_pct > 60 else ("#f59e0b" if conf_pct > 30 else "#ef4444")
+                    st.markdown(
+                        f"""
+                        <div class="sb-hero-result">
+                          <div class="sb-hero-kicker">ISL → English ({result['version']} Encoder-Decoder)</div>
+                          <div class="sb-hero-word-en" style="font-size:clamp(1.2rem,2.5vw,1.8rem)">{html_safe(result['text'])}</div>
+                          <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;margin-top:0.8rem">
+                            <div class="sb-confidence-tag" style="background:rgba(16,185,129,0.2);color:{badge_col}">
+                              ● Token confidence: {conf_pct:.1f}%
+                            </div>
+                            <div class="sb-confidence-tag" style="background:rgba(99,102,241,0.2);color:#a5b4fc">
+                              Model: {result['version']}
+                            </div>
+                          </div>
+                          <div style="font-size:0.75rem;color:#64748b;margin-top:0.9rem;line-height:1.5">
+                            ⚠ Experimental — trained on ISL-CSLRT (~40 sentence classes, 642 pairs).
+                            Predictions outside this vocabulary will be unreliable. Not a production system.
+                          </div>
+                          <button class="sb-tts-btn" onclick="window.speechSynthesis.speak(new SpeechSynthesisUtterance('{html_safe(result['text'])}'))">
+                            🔊 Listen
+                          </button>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                elif not translate_btn:
                     st.markdown(
                         """
-                        <div class="sb-hero-result" style="border-color:rgba(245,158,11,0.4)">
-                          <div class="sb-hero-kicker" style="color:#fbbf24">Continuous Pipeline · Setup Guide</div>
-                          <div style="font-size:1.15rem;font-weight:800;color:#fff;margin-top:0.3rem">
-                            V1/V2 isolated sign models are active.
-                          </div>
-                          <div style="font-size:0.85rem;color:#94a3b8;margin-top:0.6rem;line-height:1.6">
-                            Continuous sentence translation requires paired continuous ISL video transcripts.
-                            Run <code>run_translation_v3.bat</code> to train the continuous Transformer/LSTM model.
+                        <div style="text-align:center;padding:3rem 1.5rem">
+                          <div style="font-size:3rem;margin-bottom:0.8rem">🌐</div>
+                          <div style="font-size:1rem;font-weight:800;color:#f8fafc">Ready to Translate</div>
+                          <div style="font-size:0.82rem;color:#64748b;max-width:340px;margin:0.5rem auto">
+                            Upload a continuous ISL video on the left and click Generate.
                           </div>
                         </div>
                         """,
                         unsafe_allow_html=True,
                     )
-            else:
-                st.info("Submit a video or live recording to generate a continuous translated sentence.")
+
+        # V3 vs V4 comparison table below
+        st.markdown("---")
+        st.markdown("### 📊 V3 vs V4 — Held-Out Evaluation")
+        all_m = load_metrics_data()
+        comp_rows = []
+        for ver, label in [("v3", "LSTM Encoder-Decoder"), ("v4", "Temporal Transformer")]:
+            mm = all_m.get(ver, {})
+            tm = mm.get("text_metrics", {})
+            if mm:
+                comp_rows.append({
+                    "Version": ver.upper(),
+                    "Architecture": label,
+                    "Split": mm.get("split_type", "unknown"),
+                    "Train pairs": mm.get("train_pairs", "-"),
+                    "Test pairs": mm.get("test_pairs", "-"),
+                    "Exact-match": f"{tm.get('exact_match', 0):.1%}",
+                    "Corpus BLEU": f"{tm.get('corpus_bleu', 0):.4f}",
+                })
+        if comp_rows:
+            st.dataframe(comp_rows, use_container_width=True)
+        st.caption("Metrics computed on signer-group held-out split. Low scores are expected on this small dataset — not suitable for production use.")
 
 
 # ===================================================================
@@ -973,7 +1058,7 @@ elif page == "📊 Model Analytics & Heatmap":
         <div style="margin-bottom:1.2rem">
           <h2 style="font-size:1.6rem;font-weight:900;color:#fff;margin:0 0 0.3rem">Model Benchmarks & Performance</h2>
           <div style="color:#94a3b8;font-size:0.9rem">
-            Comparative evaluation between Baseline Random Forest and Bi-LSTM on the 40-class ISL benchmark.
+            Comparative evaluation across all four SignBridge pipeline stages.
           </div>
         </div>
         """,
@@ -983,19 +1068,38 @@ elif page == "📊 Model Analytics & Heatmap":
     metrics = load_metrics_data()
     m_baseline = metrics.get("baseline", {})
     m_lstm = metrics.get("lstm", {})
+    m_v3 = metrics.get("v3", {})
+    m_v4 = metrics.get("v4", {})
 
     rf_acc = m_baseline.get("accuracy", 0.6447)
     lstm_acc = m_lstm.get("accuracy", 0.4213)
+    v3_bleu = m_v3.get("text_metrics", {}).get("corpus_bleu") if m_v3 else None
+    v3_exact = m_v3.get("text_metrics", {}).get("exact_match") if m_v3 else None
+    v4_bleu = m_v4.get("text_metrics", {}).get("corpus_bleu") if m_v4 else None
+    v4_exact = m_v4.get("text_metrics", {}).get("exact_match") if m_v4 else None
 
+    # Row 1 — Isolated sign classification
+    st.markdown("#### 🏷️ Isolated Sign Classification (V1 — 40 classes)")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.metric("Random Forest Accuracy", f"{rf_acc * 100:.2f}%", "+22.3% over LSTM")
+        st.metric("Random Forest Accuracy", f"{rf_acc * 100:.2f}%", "+22.3% vs LSTM")
     with c2:
-        st.metric("Bi-LSTM Accuracy", f"{lstm_acc * 100:.2f}%", "Temporal Sequence")
+        st.metric("Bi-LSTM Accuracy", f"{lstm_acc * 100:.2f}%", "Temporal sequence")
     with c3:
         st.metric("Test Samples", m_baseline.get("test_samples", 197), "Signer-disjoint")
     with c4:
-        st.metric("Total Classes", "40 ISL Signs", "Balanced representation")
+        st.metric("Vocabulary", "40 ISL Signs", "Balanced representation")
+
+    st.markdown("#### 🌐 Sentence Translation (V3 LSTM vs V4 Transformer — 40 sentence classes)")
+    s1, s2, s3, s4 = st.columns(4)
+    with s1:
+        st.metric("V3 LSTM Exact-match", f"{v3_exact * 100:.1f}%" if v3_exact is not None else "Not trained", "held-out test")
+    with s2:
+        st.metric("V3 LSTM BLEU", f"{v3_bleu:.4f}" if v3_bleu is not None else "—")
+    with s3:
+        st.metric("V4 Transformer Exact-match", f"{v4_exact * 100:.1f}%" if v4_exact is not None else "Not trained", delta="+18.5pp vs V3" if (v4_exact and v3_exact) else None)
+    with s4:
+        st.metric("V4 Transformer BLEU", f"{v4_bleu:.4f}" if v4_bleu is not None else "—", delta=f"+{(v4_bleu - v3_bleu):.4f} vs V3" if (v4_bleu and v3_bleu) else None)
 
     import plotly.graph_objects as go
     rep = m_baseline.get("classification_report", {})

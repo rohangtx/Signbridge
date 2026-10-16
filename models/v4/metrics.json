@@ -1,0 +1,187 @@
+{
+  "version": "V4",
+  "model": "temporal Transformer encoder-decoder",
+  "split_type": "signer-group split",
+  "train_pairs": 588,
+  "test_pairs": 54,
+  "vocab_size": 65,
+  "max_target_tokens": 32,
+  "d_model": 256,
+  "training_history": {
+    "loss": [
+      0.2931250035762787,
+      0.15051287412643433,
+      0.12281013280153275,
+      0.11121982336044312,
+      0.10667701065540314,
+      0.10162439942359924,
+      0.09700778126716614,
+      0.090921550989151,
+      0.08525900542736053,
+      0.08231718093156815,
+      0.0761447623372078,
+      0.06996554136276245,
+      0.06912790238857269,
+      0.06347788870334625,
+      0.05988600105047226,
+      0.05812368914484978,
+      0.05285172909498215,
+      0.05399491637945175,
+      0.048383232206106186,
+      0.04576271027326584,
+      0.040314819663763046,
+      0.03129754215478897,
+      0.027072647586464882,
+      0.027174005284905434,
+      0.024263856932520866,
+      0.020648669451475143,
+      0.020929044112563133
+    ],
+    "val_loss": [
+      0.38048961758613586,
+      0.3397725522518158,
+      0.3441651165485382,
+      0.34807324409484863,
+      0.3168814778327942,
+      0.2921644449234009,
+      0.3048643469810486,
+      0.3101496994495392,
+      0.334745317697525,
+      0.2937873601913452,
+      0.28652307391166687,
+      0.273967444896698,
+      0.29037052392959595,
+      0.2996446192264557,
+      0.22528958320617676,
+      0.23807482421398163,
+      0.28355395793914795,
+      0.27502331137657166,
+      0.27242040634155273,
+      0.290386825799942,
+      0.2801276743412018,
+      0.2877337634563446,
+      0.28224775195121765,
+      0.2528393566608429,
+      0.2624075412750244,
+      0.26728934049606323,
+      0.2665356397628784
+    ],
+    "learning_rate": [
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      9.999999747378752e-05,
+      4.999999873689376e-05,
+      4.999999873689376e-05,
+      4.999999873689376e-05,
+      4.999999873689376e-05,
+      4.999999873689376e-05,
+      4.999999873689376e-05
+    ]
+  },
+  "text_metrics": {
+    "exact_match": 0.24074074074074073,
+    "corpus_bleu": 0.0758654583275862,
+    "evaluated_sentences": 54,
+    "note": "Metrics are meaningful only with a properly sized, representative held-out set; exact match and BLEU do not replace human evaluation."
+  },
+  "sample_predictions": [
+    {
+      "reference": "She is my mother",
+      "prediction": "please"
+    },
+    {
+      "reference": "What is this",
+      "prediction": "please come here"
+    },
+    {
+      "reference": "Where is that",
+      "prediction": "please sit down"
+    },
+    {
+      "reference": "She is here",
+      "prediction": "please"
+    },
+    {
+      "reference": "No",
+      "prediction": "please"
+    },
+    {
+      "reference": "He is my friend",
+      "prediction": "she is my teacher"
+    },
+    {
+      "reference": "He is my father",
+      "prediction": "please"
+    },
+    {
+      "reference": "He is my friend",
+      "prediction": "please help me"
+    },
+    {
+      "reference": "I need food",
+      "prediction": "please"
+    },
+    {
+      "reference": "She is my mother",
+      "prediction": "please"
+    },
+    {
+      "reference": "I need food",
+      "prediction": "please"
+    },
+    {
+      "reference": "Go to school",
+      "prediction": "please sit down"
+    },
+    {
+      "reference": "You are welcome",
+      "prediction": "please come here"
+    },
+    {
+      "reference": "She is my mother",
+      "prediction": "please"
+    },
+    {
+      "reference": "She is my sister",
+      "prediction": "please"
+    },
+    {
+      "reference": "Go to school",
+      "prediction": "i am writing"
+    },
+    {
+      "reference": "He is my brother",
+      "prediction": "please"
+    },
+    {
+      "reference": "No",
+      "prediction": "please"
+    },
+    {
+      "reference": "Where is that",
+      "prediction": "please sit down"
+    },
+    {
+      "reference": "I want tea",
+      "prediction": "please stand up"
+    }
+  ]
+}

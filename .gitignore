@@ -4,9 +4,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .env
-*.db
-*.sqlite
-*.sqlite3
 data/raw/
 data/processed/*.npz
 data/processed/*.npy
@@ -17,11 +14,6 @@ data/translation/videos/
 *.avi
 *.mov
 *.zip
-models/**/*.joblib
-models/**/*.keras
-models/**/metrics.json
-models/**/vocab.json
-models/**/sample_predictions.json
 models/baseline_raw_backup/
 reports/*.png
 reports/*.csv

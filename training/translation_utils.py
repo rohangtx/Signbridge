@@ -17,14 +17,91 @@ def tokenize(text):
     return re.findall(r"[a-z0-9]+(?:'[a-z0-9]+)?|[^\w\s]", str(text).lower())
 
 
-def split_indices(n, groups=None, test_size=0.15, random_state=42):
+_L_SHOULDER_IDX = 11
+_R_SHOULDER_IDX = 12
+_POSE_STRIDE = 4
+
+
+def normalize_sequence(seq: np.ndarray) -> np.ndarray:
+    """Center landmarks on shoulder midpoint, scale by shoulder width.
+    Makes features signer-position and scale invariant.
+    seq: (T, 258) float32
+    """
+    seq = seq.copy()
+    ls = _L_SHOULDER_IDX * _POSE_STRIDE
+    rs = _R_SHOULDER_IDX * _POSE_STRIDE
+    for t in range(seq.shape[0]):
+        lx, ly = seq[t, ls], seq[t, ls + 1]
+        rx, ry = seq[t, rs], seq[t, rs + 1]
+        if lx == 0.0 and rx == 0.0:
+            continue
+        cx = (lx + rx) / 2.0
+        cy = (ly + ry) / 2.0
+        shoulder_width = max(abs(rx - lx), 0.05)
+        # Pose landmarks: 33 points (stride 4: x, y, z, vis)
+        for i in range(0, 132, 4):
+            if seq[t, i] != 0.0 or seq[t, i + 1] != 0.0:
+                seq[t, i]     = (seq[t, i]     - cx) / shoulder_width
+                seq[t, i + 1] = (seq[t, i + 1] - cy) / shoulder_width
+        # Left hand: 132 to 195 (63 values)
+        lh = seq[t, 132:195]
+        if np.any(lh != 0.0):
+            for i in range(132, 195, 3):
+                seq[t, i]     = (seq[t, i]     - cx) / shoulder_width
+                seq[t, i + 1] = (seq[t, i + 1] - cy) / shoulder_width
+        # Right hand: 195 to 258 (63 values)
+        rh = seq[t, 195:258]
+        if np.any(rh != 0.0):
+            for i in range(195, 258, 3):
+                seq[t, i]     = (seq[t, i]     - cx) / shoulder_width
+                seq[t, i + 1] = (seq[t, i + 1] - cy) / shoulder_width
+    return seq
+
+
+def normalize_dataset(X: np.ndarray) -> np.ndarray:
+    """Normalize a batch of landmark sequences (N, 32, 258)."""
+    normed = np.empty_like(X)
+    for i in range(len(X)):
+        normed[i] = normalize_sequence(X[i])
+    return normed
+
+
+def augment_landmarks(X_batch, jitter_std=0.008, scale_range=(0.95, 1.05)):
+    """Augments landmark sequences (N, 32, 258) with subtle jitter, scaling, and frame smoothing."""
+    aug = X_batch.copy()
+    N, T, F = aug.shape
+    scales = np.random.uniform(scale_range[0], scale_range[1], size=(N, 1, 1)).astype(np.float32)
+    aug = aug * scales
+    mask = (aug != 0.0)
+    noise = np.random.normal(0, jitter_std, size=(N, T, F)).astype(np.float32)
+    aug = np.where(mask, aug + noise, 0.0)
+    for i in range(N):
+        if np.random.rand() < 0.4:
+            drop_idx = np.random.randint(1, T)
+            aug[i, drop_idx] = aug[i, drop_idx - 1]
+    return aug
+
+
+def split_indices(n, groups=None, texts=None, test_size=0.15, random_state=42):
     ids = np.arange(n)
+    if texts is not None:
+        texts_arr = np.asarray(texts)
+        from collections import Counter
+        counts = Counter(texts_arr)
+        multi = [c for c, count in counts.items() if count >= 2]
+        if len(multi) >= 10:
+            mask = np.isin(texts_arr, multi)
+            multi_ids = ids[mask]
+            single_ids = ids[~mask]
+            tr_sub, te = train_test_split(multi_ids, test_size=test_size, random_state=random_state, stratify=texts_arr[mask])
+            tr = np.concatenate([tr_sub, single_ids])
+            np.random.RandomState(random_state).shuffle(tr)
+            return tr, te, "stratified sentence split"
     if groups is not None:
         groups = np.asarray(groups).astype(str)
         known = groups != "unknown"
         valid = groups[known]
         if len(set(valid.tolist())) >= 2:
-            # A group split is preferred, but don't let a malformed grouping produce an empty split.
             for seed in range(random_state, random_state + 20):
                 tr, te = next(GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=seed).split(ids, groups=groups))
                 if len(tr) > 0 and len(te) > 0:
@@ -59,11 +136,10 @@ def decode_ids(ids, id_to_token):
             break
         out.append(token)
     text = " ".join(out)
-    # Basic punctuation spacing cleanup; this is not a grammar-correction stage.
     return re.sub(r"\s+([.,!?;:])", r"\1", text).strip()
 
 
-def load_translation_data():
+def load_translation_data(normalize=True):
     p = ROOT / "data" / "processed" / "translation_sequences.npz"
     if not p.exists():
         raise SystemExit("translation_sequences.npz missing. Run preprocessing/build_translation_dataset.py first.")
@@ -72,9 +148,11 @@ def load_translation_data():
     texts = d["text"].astype(str)
     signers = d["signer"].astype(str) if "signer" in d.files else np.asarray(["unknown"] * len(texts))
     if len(X) < 10:
-        raise SystemExit(f"Only {len(X)} pairs found; at least 10 are required to start this experimental training script. This is not a recommended research dataset size.")
+        raise SystemExit(f"Only {len(X)} pairs found; at least 10 are required.")
     if len(X) != len(texts):
         raise SystemExit("Feature/text count mismatch in translation_sequences.npz")
+    if normalize:
+        X = normalize_dataset(X)
     return X, texts, signers
 
 

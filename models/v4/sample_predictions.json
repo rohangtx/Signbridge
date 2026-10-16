@@ -1,0 +1,82 @@
+[
+  {
+    "reference": "She is my mother",
+    "prediction": "please"
+  },
+  {
+    "reference": "What is this",
+    "prediction": "please come here"
+  },
+  {
+    "reference": "Where is that",
+    "prediction": "please sit down"
+  },
+  {
+    "reference": "She is here",
+    "prediction": "please"
+  },
+  {
+    "reference": "No",
+    "prediction": "please"
+  },
+  {
+    "reference": "He is my friend",
+    "prediction": "she is my teacher"
+  },
+  {
+    "reference": "He is my father",
+    "prediction": "please"
+  },
+  {
+    "reference": "He is my friend",
+    "prediction": "please help me"
+  },
+  {
+    "reference": "I need food",
+    "prediction": "please"
+  },
+  {
+    "reference": "She is my mother",
+    "prediction": "please"
+  },
+  {
+    "reference": "I need food",
+    "prediction": "please"
+  },
+  {
+    "reference": "Go to school",
+    "prediction": "please sit down"
+  },
+  {
+    "reference": "You are welcome",
+    "prediction": "please come here"
+  },
+  {
+    "reference": "She is my mother",
+    "prediction": "please"
+  },
+  {
+    "reference": "She is my sister",
+    "prediction": "please"
+  },
+  {
+    "reference": "Go to school",
+    "prediction": "i am writing"
+  },
+  {
+    "reference": "He is my brother",
+    "prediction": "please"
+  },
+  {
+    "reference": "No",
+    "prediction": "please"
+  },
+  {
+    "reference": "Where is that",
+    "prediction": "please sit down"
+  },
+  {
+    "reference": "I want tea",
+    "prediction": "please stand up"
+  }
+]
