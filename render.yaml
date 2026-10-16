@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: signbridge
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "streamlit run app/streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true --server.enableCORS false --server.enableXsrfProtection false"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: TF_ENABLE_ONEDNN_OPTS
+        value: 0
