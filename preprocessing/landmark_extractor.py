@@ -13,14 +13,15 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+import mediapipe as mp
+
 try:
-    import mediapipe.python.solutions.holistic as mp_holistic
-except Exception:
+    mp_holistic = mp.solutions.holistic
+except AttributeError:
     try:
-        import mediapipe.solutions.holistic as mp_holistic
+        from mediapipe.python.solutions import holistic as mp_holistic
     except Exception:
-        import mediapipe as mp
-        mp_holistic = getattr(mp, "solutions", None).holistic
+        mp_holistic = None
 
 cv2.setNumThreads(1)
 
